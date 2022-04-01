@@ -16,17 +16,23 @@ contract HenkakuQuest is AccessControl {
     bytes32 public constant QUEST_CREATION_ROLE = keccak256("QUEST_CREATION_ROLE");
     bytes32 public constant HENKAKU_MEMBER_ROLE = keccak256("HENKAKU_MEMBER_ROLE");
 
-    struct Quest {
+    struct Content {
         string title;
         string category;
-        string body;
+        string description;
+        string limitation;
         uint256 amount;
         uint endedAt;
     }
 
+    struct Quest {
+        Content jp;
+        Content en;
+    }
+
     address private memberShipNFTAddress;
     IHenkakuMemberShip private memberShipNFT;
-    Quest[] private quests;
+    mapping(uint256 => Quest) quests;
     uint private id;
 
     constructor(address _memberShipNftAddress) {
@@ -76,7 +82,8 @@ contract HenkakuQuest is AccessControl {
 
     function save(Quest memory _quest) public {
         require(hasRole(QUEST_CREATION_ROLE, msg.sender) || hasRole(ADMIN_ROLE, msg.sender), 'You need to have Quest creation role or admin role to add a quest');
-        quests.push(_quest);
+        quests[id] = _quest;
+        id += 1;
     }
 
     function canReadQuest(address _address) public view returns(bool) {
@@ -85,6 +92,11 @@ contract HenkakuQuest is AccessControl {
 
     function getQuests() public view returns(Quest[] memory){
         require(canReadQuest(msg.sender), 'You dont have permission to obtain');
-        return quests;
+        Quest[] memory _quests = new Quest[](id);
+        for (uint i = 0; i < id; i++) {
+            _quests[i] = quests[i];
+        }
+
+        return _quests;
     }
 }

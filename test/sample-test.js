@@ -16,18 +16,29 @@ describe("HenkakuQuest", function () {
     await henkakuQuest.deployed();
 
     const quest = {
-      title: "hoge",
-      body: "fobar",
-      category: "foo",
-      amount: 100,
-      endedAt: 0
+      jp: {
+        title: "hoge",
+        description: "fobar",
+        category: "foo",
+        limitation: 'per week 40',
+        amount: 100,
+        endedAt: 0
+      },
+      en: {
+        title: "hoge",
+        description: "fobar",
+        category: "foo",
+        limitation: 'per week 40',
+        amount: 100,
+        endedAt: 0
+      }
     }
     await expect(henkakuQuest.connect(user1).save(quest)).eventually.to.rejectedWith(Error)
 
     await henkakuQuest.addQuestCreationRole(user1.address)
     await henkakuQuest.connect(user1).save(quest)
     const data = await henkakuQuest.getQuests()
-    expect(data[0].title).to.equal(quest.title)
+    expect(data[0].jp.title).to.equal(quest.en.title)
   })
 
   it("Add quests and returns them to only the henkaku member", async () => {
@@ -46,28 +57,50 @@ describe("HenkakuQuest", function () {
 
     const quests = [
       {
-        title: "hoge",
-        body: "fobar",
-        category: "foo",
-        amount: 100,
-        endedAt: 0
+        jp: {
+          title: "hoge",
+          description: "fobar",
+          category: "foo",
+          limitation: 'per week 40',
+          amount: 100,
+          endedAt: 0
+        },
+        en: {
+          title: "hoge",
+          description: "fobar",
+          category: "foo",
+          limitation: 'per week 40',
+          amount: 100,
+          endedAt: 0
+        }
       },
       {
-        title: "Foo",
-        body: "bar",
-        category: "foo",
-        amount: 100,
-        endedAt: 0
+        jp: {
+          title: "teehee",
+          description: "fobar",
+          category: "foo",
+          limitation: 'per week 40',
+          amount: 100,
+          endedAt: 0
+        },
+        en: {
+          title: "teehee",
+          description: "fobar",
+          category: "foo",
+          limitation: 'per week 40',
+          amount: 100,
+          endedAt: 0
+        }
       },
     ]
     quests.forEach(quest => henkakuQuest.save(quest))
     const data = await henkakuQuest.getQuests()
-    expect(data[0].title).to.equal(quests[0].title)
+    expect(data[0].jp.title).to.equal(quests[0].jp.title)
 
     await expect(henkakuQuest.connect(user1).getQuests()).eventually.to.rejectedWith(Error)
 
     await henkakuQuest.addMemberRole(user1.address)
     const data2 = await henkakuQuest.connect(user1).getQuests()
-    expect(data2[0].title).to.equal(quests[0].title)
+    expect(data2[0].jp.title).to.equal(quests[0].jp.title)
   });
 });
