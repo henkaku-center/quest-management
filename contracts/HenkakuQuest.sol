@@ -21,18 +21,18 @@ contract HenkakuQuest is AccessControl {
     bytes32 public constant HENKAKU_MEMBER_ROLE =
         keccak256("HENKAKU_MEMBER_ROLE");
 
-    struct Content {
-        string title;
-        string category;
-        string description;
-        string limitation;
-        uint256 amount;
-        uint256 endedAt;
+    struct Billingual {
+        string jp;
+        string en;
     }
 
     struct Quest {
-        Content jp;
-        Content en;
+        Billingual title;
+        Billingual description;
+        string category;
+        string limitation;
+        uint256 amount;
+        uint256 endedAt;
     }
 
     address private memberShipNFTAddress;
@@ -92,6 +92,27 @@ contract HenkakuQuest is AccessControl {
             console.log(_candidate);
         }
         return memberShipNFT.isCommunityMember(_tokenId);
+    }
+
+    function closeQuest(uint256 _id) public {
+        require(
+            hasRole(QUEST_CREATION_ROLE, msg.sender) ||
+                hasRole(ADMIN_ROLE, msg.sender),
+            "You need to have Quest creation role or admin role to edit a quest"
+        );
+        Quest memory _quest = quests[_id];
+        _quest.endedAt = block.timestamp;
+        _quest.endedAt = block.timestamp;
+        quests[_id] = _quest;
+    }
+
+    function update(uint256 _id, Quest memory _quest) public {
+        require(
+            hasRole(QUEST_CREATION_ROLE, msg.sender) ||
+                hasRole(ADMIN_ROLE, msg.sender),
+            "You need to have Quest creation role or admin role to edit a quest"
+        );
+        quests[_id] = _quest;
     }
 
     function save(Quest memory _quest) public {
