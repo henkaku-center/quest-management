@@ -10,7 +10,8 @@ interface IHenkakuMemberShip {
     function tokenURI(uint256 _tokenId) external view returns (string memory);
 
     function isCommunityMember(uint256 _tokenId) external view returns (bool);
-
+    function getCommuinityMemberRole(address _address) external view returns(string[] memory);
+    function hasRoleOf(address _address, string memory _role) external view returns(bool);
     function ownerOf(uint256 tokenId) external view returns (address);
 }
 
@@ -58,6 +59,7 @@ contract HenkakuQuest is AccessControl {
         );
         _grantRole(ADMIN_ROLE, _to);
     }
+
 
     function addQuestCreationRole(address _to) public {
         require(

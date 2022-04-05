@@ -9,23 +9,46 @@ contract NFT is ERC721URIStorage {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
-    mapping(uint256 => bool) private _communityMemberShip;
+    mapping(address => string[]) private _communityRoles;
 
     constructor() ERC721("Henkaku v0.1", "henkaku") {}
 
-    function isCommunityMember(uint256 _tokenId) public view returns(bool) {
-      return _communityMemberShip[_tokenId];
+    function getCommuinityMemberRole(address _address)
+        public
+        view
+        returns (string[] memory)
+    {
+        return _communityRoles[_address];
     }
 
-    function mint(bool isMember, address _to) public returns (uint256) {
+    function hasRoleOf(address _address, string memory _role)
+        public
+        view
+        returns (bool)
+    {
+        string[] memory _roles = _communityRoles[_address];
+        for (uint256 i = 0; i < _roles.length; i++) {
+            if (keccak256(bytes(_roles[i])) == keccak256(bytes(_role))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function mint(string[] memory _roles, address _to)
+        public
+        returns (uint256)
+    {
         _tokenIds.increment();
         uint256 newItemId = _tokenIds.current();
         _safeMint(_to, newItemId);
 
-        _communityMemberShip[newItemId] = isMember;
+        for (uint256 i = 0; i < _roles.length; i++) {
+            _communityRoles[_to].push(_roles[i]);
+        }
+
         string memory finalTokenUri = "https://example.com/";
         _setTokenURI(newItemId, finalTokenUri);
         return newItemId;
     }
-
 }
