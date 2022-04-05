@@ -10,8 +10,11 @@ interface IHenkakuMemberShip {
     function tokenURI(uint256 _tokenId) external view returns (string memory);
 
     function isCommunityMember(uint256 _tokenId) external view returns (bool);
-    function getCommuinityMemberRole(address _address) external view returns(string[] memory);
-    function hasRoleOf(address _address, string memory _role) external view returns(bool);
+
+    function getCommuinityMemberRole(address _address) external view returns (string[] memory);
+
+    function hasRoleOf(address _address, string memory _role) external view returns (bool);
+
     function ownerOf(uint256 tokenId) external view returns (address);
 }
 
@@ -60,7 +63,6 @@ contract HenkakuQuest is AccessControl {
         _grantRole(ADMIN_ROLE, _to);
     }
 
-
     function addQuestCreationRole(address _to) public {
         require(
             hasRole(ADMIN_ROLE, msg.sender),
@@ -77,41 +79,47 @@ contract HenkakuQuest is AccessControl {
         _grantRole(HENKAKU_MEMBER_ROLE, _to);
     }
 
-    function isMember(address _address) internal view returns (bool) {
+    function hasRoleOf(
+        address _address,
+        bytes32 _role,
+        string memory _nftRole
+    ) internal view returns (bool) {
+        if (hasRole(_role, _address)) {
+            return true;
+        }
+
         uint256 _balance = memberShipNFT.balanceOf(_address);
         if (_balance <= 0) {
             return false;
         }
+        return memberShipNFT.hasRoleOf(_address, _nftRole);
+    }
 
-        uint256 _tokenId = 0;
-        address _candidate;
-        bool _isMember = false;
-        while (!_isMember) {
-            _tokenId += 1;
-            _candidate = memberShipNFT.ownerOf(_tokenId);
-            _isMember = _candidate == _address;
-            console.log(_tokenId);
-            console.log(_candidate);
-        }
-        return memberShipNFT.isCommunityMember(_tokenId);
+    function hasAdminRole(address _address) internal view returns (bool) {
+        return hasRoleOf(_address, ADMIN_ROLE, "ADMIN_ROLE");
+    }
+
+    function hasCreatQuestRole(address _address) internal view returns (bool) {
+        return hasRoleOf(_address, QUEST_CREATION_ROLE, "QUEST_CREATION_ROLE");
+    }
+
+    function hasMemberRole(address _address) internal view returns (bool) {
+        return hasRoleOf(_address, HENKAKU_MEMBER_ROLE, "MEMBER_ROLE");
     }
 
     function closeQuest(uint256 _id) public {
         require(
-            hasRole(QUEST_CREATION_ROLE, msg.sender) ||
-                hasRole(ADMIN_ROLE, msg.sender),
+            hasCreatQuestRole(msg.sender) || hasAdminRole(msg.sender),
             "You need to have Quest creation role or admin role to edit a quest"
         );
         Quest memory _quest = quests[_id];
-        _quest.endedAt = block.timestamp;
         _quest.endedAt = block.timestamp;
         quests[_id] = _quest;
     }
 
     function update(uint256 _id, Quest memory _quest) public {
         require(
-            hasRole(QUEST_CREATION_ROLE, msg.sender) ||
-                hasRole(ADMIN_ROLE, msg.sender),
+            hasCreatQuestRole(msg.sender) || hasAdminRole(msg.sender),
             "You need to have Quest creation role or admin role to edit a quest"
         );
         quests[_id] = _quest;
@@ -119,8 +127,7 @@ contract HenkakuQuest is AccessControl {
 
     function save(Quest memory _quest) public {
         require(
-            hasRole(QUEST_CREATION_ROLE, msg.sender) ||
-                hasRole(ADMIN_ROLE, msg.sender),
+            hasCreatQuestRole(msg.sender) || hasAdminRole(msg.sender),
             "You need to have Quest creation role or admin role to add a quest"
         );
         quests[id] = _quest;
@@ -129,10 +136,9 @@ contract HenkakuQuest is AccessControl {
 
     function canReadQuest(address _address) public view returns (bool) {
         return
-            hasRole(QUEST_CREATION_ROLE, _address) ||
-            hasRole(ADMIN_ROLE, _address) ||
-            hasRole(HENKAKU_MEMBER_ROLE, _address) ||
-            isMember(_address);
+            hasMemberRole(_address) ||
+            hasCreatQuestRole(_address) ||
+            hasAdminRole(_address);
     }
 
     function getQuests() public view returns (Quest[] memory) {

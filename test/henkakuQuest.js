@@ -5,7 +5,7 @@ const chaiAsPromised = require('chai-as-promised')
 chai.use(chaiAsPromised)
 
 describe('HenkakuQuest', function () {
-  let owner, user1
+  let owner, user1, user2, user3
   let nft, henkakuQuest
   const quest = {
     title: {
@@ -23,7 +23,7 @@ describe('HenkakuQuest', function () {
   }
 
   beforeEach(async () => {
-    [owner, user1] = await ethers.getSigners()
+    ;[owner, user1, user2, user3] = await ethers.getSigners()
     const Nft = await ethers.getContractFactory('NFT', owner)
     nft = await Nft.deploy()
     await nft.deployed()
@@ -59,25 +59,72 @@ describe('HenkakuQuest', function () {
     await henkakuQuest.addQuestCreationRole(user1.address)
     await henkakuQuest.save(quest)
     let data = await henkakuQuest.getQuests()
+
     expect(data[0].title.jp).to.equal(quest.title.jp)
     expect(data[0].endedAt).to.equal(0)
+
     await henkakuQuest.connect(user1).closeQuest(0)
     data = await henkakuQuest.getQuests()
     expect(data[0].endedAt).to.not.equal(0)
   })
 
-  it('Add quests and returns them to only the henkaku member', async () => {
-    await nft.mint(true, owner.address)
-    await henkakuQuest.save(quest)
-    const data = await henkakuQuest.getQuests()
-    expect(data[0].title.jp).to.equal(quest.title.jp)
+  describe('with memberShip NFT', async () => {
+    it('ADMIN_ROLE can create quest and close quest', async () => {
+      await nft.mint(['ADMIN_ROLE'], user1.address)
+      await henkakuQuest.connect(user1).save(quest)
+      let data = await henkakuQuest.getQuests()
+      expect(data[0].title.jp).to.equal(quest.title.jp)
 
-    await expect(
-      henkakuQuest.connect(user1).getQuests()
-    ).eventually.to.rejectedWith(Error)
+      await henkakuQuest.connect(user1).closeQuest(0)
+      data = await henkakuQuest.getQuests()
+      expect(data[0].endedAt).to.not.equal(0)
+    })
 
-    await henkakuQuest.addMemberRole(user1.address)
-    const data2 = await henkakuQuest.connect(user1).getQuests()
-    expect(data2[0].title.jp).to.equal(quest.title.jp)
+    it('QUEST_CREATION_ROLE can create quest', async () => {
+      await nft.mint(['MEMBER_ROLE'], user1.address)
+      await expect(
+        henkakuQuest.connect(user1).save(quest)
+      ).eventually.to.rejectedWith(Error)
+
+      await nft.mint(['MEMBER_ROLE', 'QUEST_CREATION_ROLE'], user2.address)
+      await henkakuQuest.save(quest)
+      let data = await henkakuQuest.getQuests()
+      expect(data[0].title.jp).to.equal(quest.title.jp)
+    })
+
+    it('QUEST_CREATION_ROLE can close a quest', async () => {
+      await henkakuQuest.addQuestCreationRole(owner.address)
+      await henkakuQuest.save(quest)
+      let data = await henkakuQuest.getQuests()
+      expect(data[0].title.jp).to.equal(quest.title.jp)
+      expect(data[0].endedAt).to.equal(0)
+
+      await henkakuQuest.save(quest)
+
+      await nft.mint(['MEMBER_ROLE'], user1.address)
+      await expect(
+        henkakuQuest.connect(user1).closeQuest(0)
+      ).eventually.to.rejectedWith(Error)
+
+      await nft.mint(['MEMBER_ROLE', 'QUEST_CREATION_ROLE'], user2.address)
+      await henkakuQuest.connect(user2).closeQuest(0)
+      data = await henkakuQuest.getQuests()
+      expect(data[0].endedAt).to.not.equal(0)
+    })
+
+    it('MEMBER_ROLE can read all quests', async () => {
+      await nft.mint(['MEMBER_ROLE'], owner.address)
+      await henkakuQuest.save(quest)
+      const data = await henkakuQuest.getQuests()
+      expect(data[0].title.jp).to.equal(quest.title.jp)
+
+      await expect(
+        henkakuQuest.connect(user1).getQuests()
+      ).eventually.to.rejectedWith(Error)
+
+      await nft.mint(['MEMBER_ROLE'], user1.address)
+      const data2 = await henkakuQuest.connect(user1).getQuests()
+      expect(data2[0].title.jp).to.equal(quest.title.jp)
+    })
   })
 })
