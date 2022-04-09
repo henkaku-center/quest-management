@@ -16,24 +16,24 @@ async function main() {
 
   // We get the contract to deploy
   const HenkakuQuest = await hre.ethers.getContractFactory("HenkakuQuest");
-  const henkakuQuest = await HenkakuQuest.deploy();
+  const henkakuQuest = await HenkakuQuest.deploy('0x4E343383F8871238CEb4c91A2bcA91Af39E25ECD');
 
   await henkakuQuest.deployed();
-  const quests = [
-    {
-      title: "hoge",
-      body: "fobar",
-      amount: 100,
-      endedAt: 0
+  const quest = {
+    title: {
+      jp: '日本語1',
+      en: 'Foobar',
     },
-    {
-      title: "Foo",
-      body: "bar",
-      amount: 100,
-      endedAt: 0
+    description: {
+      jp: 'fobar',
+      en: 'foobar',
     },
-  ]
-  quests.forEach(quest => henkakuQuest.save(quest))
+    category: 'foo',
+    limitation: 'per week 40',
+    amount: 100,
+    endedAt: 0,
+  }
+  await henkakuQuest.save(quest)
 
   console.log("HenkakuQuest deployed to:", henkakuQuest.address);
   const data = await henkakuQuest.getQuests()
