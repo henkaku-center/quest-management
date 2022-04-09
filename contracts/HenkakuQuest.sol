@@ -72,7 +72,7 @@ contract HenkakuQuest is AccessControl {
         uint256 enQuestId;
     }
 
-    address private memberShipNFTAddress;
+    address public memberShipNFTAddress;
     IHenkakuMemberShip private memberShipNFT;
 
     mapping(uint256 => QuestLang) private questLang;
